@@ -1,4 +1,8 @@
-use std::{io::Write, path::PathBuf};
+use std::{
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use clap::{Parser, Subcommand};
 
@@ -18,6 +22,11 @@ enum Commands {
     GetMetadata { input: PathBuf },
 }
 
+fn avro_reader<'a>(path: impl AsRef<Path>) -> anyhow::Result<apache_avro::Reader<'a, File>> {
+    let file = File::open(path)?;
+    Ok(apache_avro::Reader::new(file)?)
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
@@ -25,9 +34,8 @@ fn main() -> anyhow::Result<()> {
 
     match cli.commands {
         Commands::ToJSON { input } => {
-            let file = std::fs::File::open(input)?;
-            let avro_reader = apache_avro::Reader::new(file)?;
-            for r in avro_reader {
+            let reader = avro_reader(input)?;
+            for r in reader {
                 serde_json::to_writer(
                     &mut out,
                     &apache_avro::from_value::<serde_json::Value>(&r?)?,
@@ -35,16 +43,14 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::GetMetadata { input } => {
-            let file = std::fs::File::open(input)?;
-            let avro_reader = apache_avro::Reader::new(file)?;
-            for (k, v) in avro_reader.user_metadata() {
+            let reader = avro_reader(input)?;
+            for (k, v) in reader.user_metadata() {
                 writeln!(out, "{k}={}", String::from_utf8_lossy(v))?;
             }
         }
         Commands::Schema { input } => {
-            let file = std::fs::File::open(input)?;
-            let avro_reader = apache_avro::Reader::new(file)?;
-            serde_json::to_writer_pretty(out, avro_reader.writer_schema())?;
+            let reader = avro_reader(input)?;
+            serde_json::to_writer_pretty(out, reader.writer_schema())?;
         }
     }
     Ok(())
