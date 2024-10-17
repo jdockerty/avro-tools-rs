@@ -23,8 +23,15 @@ fn main() {
 
     match cli.commands {
         Commands::ToJSON { input } => {
-            // read file
-            // output values to json
+            let file = std::fs::File::open(input).unwrap();
+            let avro_reader = apache_avro::Reader::new(file).unwrap();
+            for r in avro_reader {
+                let r = r.unwrap();
+                println!(
+                    "{}",
+                    apache_avro::from_value::<serde_json::Value>(&r).unwrap()
+                );
+            }
         }
         Commands::GetMetadata { input } => {
             let file = std::fs::File::open(input).unwrap();
@@ -36,7 +43,6 @@ fn main() {
         Commands::Schema { input } => {
             let file = std::fs::File::open(input).unwrap();
             let avro_reader = apache_avro::Reader::new(file).unwrap();
-
             serde_json::to_writer_pretty(std::io::stdout(), avro_reader.writer_schema()).unwrap();
         }
     }
