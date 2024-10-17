@@ -10,8 +10,11 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    /// Display the encoded data as JSON.
     ToJSON { input: PathBuf },
+    /// Display the schema as JSON.
     Schema { input: PathBuf },
+    /// Read the Avro key-value metadata header.
     GetMetadata { input: PathBuf },
 }
 
