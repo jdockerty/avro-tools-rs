@@ -18,32 +18,29 @@ enum Commands {
     GetMetadata { input: PathBuf },
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.commands {
         Commands::ToJSON { input } => {
-            let file = std::fs::File::open(input).unwrap();
-            let avro_reader = apache_avro::Reader::new(file).unwrap();
+            let file = std::fs::File::open(input)?;
+            let avro_reader = apache_avro::Reader::new(file)?;
             for r in avro_reader {
-                let r = r.unwrap();
-                println!(
-                    "{}",
-                    apache_avro::from_value::<serde_json::Value>(&r).unwrap()
-                );
+                println!("{}", apache_avro::from_value::<serde_json::Value>(&r?)?);
             }
         }
         Commands::GetMetadata { input } => {
-            let file = std::fs::File::open(input).unwrap();
-            let avro_reader = apache_avro::Reader::new(file).unwrap();
+            let file = std::fs::File::open(input)?;
+            let avro_reader = apache_avro::Reader::new(file)?;
             for (k, v) in avro_reader.user_metadata() {
                 println!("{k}={}", String::from_utf8_lossy(v));
             }
         }
         Commands::Schema { input } => {
-            let file = std::fs::File::open(input).unwrap();
-            let avro_reader = apache_avro::Reader::new(file).unwrap();
-            serde_json::to_writer_pretty(std::io::stdout(), avro_reader.writer_schema()).unwrap();
+            let file = std::fs::File::open(input)?;
+            let avro_reader = apache_avro::Reader::new(file)?;
+            serde_json::to_writer_pretty(std::io::stdout(), avro_reader.writer_schema())?;
         }
     }
+    Ok(())
 }
