@@ -111,6 +111,7 @@ version = "0.1.0"
 dependencies = [
  "apache-avro",
  "clap",
+ "serde_json",
 ]
 
 [[package]]
